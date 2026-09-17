@@ -69,13 +69,49 @@ The add-in then sits on the Home tab as **Cell Images**.
    there. (Office.js has no selected-cell API, and `TextRange.getParentTextFrame()`
    resolves to the table shape, not the cell, so the pane cannot read your cursor
    position. The grid is the workaround.)
-2. Choose a placement, size and gap.
+2. Choose an arrangement (see below).
 3. **Insert an image…** to pick a file, or drag a picture that is already on the
    slide over the cell and press **Pull in the selected picture**. PowerPoint
    gives add-ins no drop target and no shape-moved event, so that second step is
    a button rather than a real drop.
 4. **Grow the cell to fit the image** widens the column (or heightens the row)
    instead of shrinking the image.
+
+Clicking a cell that already holds an image loads its settings back into the
+pane, and changing anything then moves the image straight away — no need to
+re-pick the file. That needs the stored original, so it does not work on cells
+placed with *Remember the original* switched off.
+
+### Arrangements
+
+Four bands, each with three cross-axis alignments — twelve arrangements:
+
+| Placement | Text goes | Alignment moves the image |
+|---|---|---|
+| Image left | right of it, full cell height | top / centre / bottom |
+| Image right | left of it, full cell height | top / centre / bottom |
+| Image above | below it, full cell width | left / centre / right |
+| Image below | above it, full cell width | left / centre / right |
+
+So "image in the top-left corner, text to its right" is *image left* with
+alignment *start*. Corners are not separate placements because they are already
+covered.
+
+Two more that reserve nothing, for cells where text is not competing with the
+image:
+
+| Placement | What it does |
+|---|---|
+| Image only | Fits the whole image inside the cell, centred. Any text overlaps it. |
+| Text over image | Fills the cell edge to edge, cropping the overflow, with the text on top. |
+
+Text alignment within whatever room is left is set separately — top / middle /
+bottom and left / centre / right / justified.
+
+**What is not possible:** text on two sides of one image. A cell has a single
+text body and margins are rectangular, so reserving two bands leaves the text in
+the remaining corner rectangle rather than flowing round the image. It looks
+broken, so it is not offered.
 
 ### Re-fit
 
@@ -90,7 +126,8 @@ original* if a deck gets fat, at the cost of Re-fit for those cells.
 
 ## Known limits
 
-- No tight wrap. See above — it is a deliberate omission, not a gap.
+- No tight wrap, and no text on two sides of an image. See above — deliberate
+  omissions, not gaps.
 - Row height is a **minimum** in PowerPoint, so "shrink the cell to the image"
   only ever works horizontally. Vertical requests below the text's needs are
   silently ignored by PowerPoint.
@@ -108,7 +145,7 @@ original* if a deck gets fat, at the cost of Re-fit for those cells.
 ```
 manifest.xml          add-in manifest (no 1.9 gate — runtime check instead)
 server.cjs            HTTPS static server for sideloading
-src/lib/layout.js     placement maths — pure, unit-tested
+src/lib/layout.js     placement maths, six arrangements — pure, unit-tested
 src/lib/compose.js    the aspect-ratio-preserving canvas composite
 src/lib/geometry.js   derives cell rectangles; hit-tests a dropped picture
 src/lib/store.js      custom XML part persistence

@@ -18,7 +18,11 @@
       </div>
       <p id="tableName" class="muted">No table selected.</p>
       <div id="grid" class="grid" aria-label="Pick a cell"></div>
-      <p class="hint">Office.js cannot tell the add-in where your cursor is, so pick the cell here.</p>
+      <p class="hint">
+        Office.js cannot tell the add-in where your cursor is, so pick the cell here.
+        Cells the add-in has filled are marked; clicking one loads its settings, and
+        changing anything below moves the image straight away.
+      </p>
     </section>
 
     <section class="block">
@@ -28,6 +32,8 @@
         <button data-v="right">Image right</button>
         <button data-v="above">Image above</button>
         <button data-v="below">Image below</button>
+        <button data-v="centre">Image only</button>
+        <button data-v="behind">Text over image</button>
       </div>
 
       <label class="field">
@@ -55,6 +61,16 @@
           <option value="Top">Top</option>
           <option value="Middle">Middle</option>
           <option value="Bottom">Bottom</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Text aligns</span>
+        <select id="halign">
+          <option value="Left">Left</option>
+          <option value="Center">Centre</option>
+          <option value="Right">Right</option>
+          <option value="Justify">Justified</option>
         </select>
       </label>
 

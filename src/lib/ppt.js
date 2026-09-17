@@ -128,6 +128,7 @@ export async function applyImage(shapeId, rowIndex, columnIndex, img, sourceBase
     cell.margins.top = margins.top;
     cell.margins.bottom = margins.bottom;
     cell.verticalAlignment = o.textValign;
+    if (o.textHalign) cell.horizontalAlignment = o.textHalign;
     await context.sync();
 
     let remembered = false;
@@ -137,7 +138,8 @@ export async function applyImage(shapeId, rowIndex, columnIndex, img, sourceBase
         store.key(shapeId, rowIndex, columnIndex),
         {
           placement: o.placement, sizePct: o.sizePct, gutter: o.gutter,
-          inset: o.inset, align: o.align, textValign: o.textValign
+          inset: o.inset, align: o.align,
+          textValign: o.textValign, textHalign: o.textHalign
         },
         stripDataUrl(sourceBase64)
       );
@@ -209,6 +211,45 @@ export async function deleteShape(shapeId) {
     shape.delete();
     await context.sync();
   });
+}
+
+/**
+ * What was this cell set to last time? Lets the pane show you the arrangement
+ * you actually have, rather than resetting to defaults every time you click.
+ *
+ * Returns null for a cell the add-in did not place, and hasOriginal:false for
+ * one placed with "remember the original" switched off -- that one can be
+ * re-positioned only by supplying the file again.
+ */
+export async function readCellSettings(shapeId, rowIndex, columnIndex) {
+  return PowerPoint.run(async (context) => {
+    const data = await store.readStore(context);
+    const rec = data[store.key(shapeId, rowIndex, columnIndex)];
+    if (!rec) return null;
+    const { original, ...settings } = rec;
+    return { ...settings, hasOriginal: Boolean(original) };
+  });
+}
+
+/**
+ * Move the image that is already in a cell -- left to right, above to below,
+ * realign it, resize it -- without asking for the file again.
+ *
+ * This is just applyImage against the stored original. Cheap, because the cell
+ * fill is regenerated from scratch on every placement anyway.
+ */
+export async function reapply(shapeId, rowIndex, columnIndex, opts) {
+  const original = await PowerPoint.run(async (context) => {
+    const data = await store.readStore(context);
+    return data[store.key(shapeId, rowIndex, columnIndex)]?.original || null;
+  });
+
+  if (!original) {
+    throw new Error('No stored original for that cell, so it cannot be moved. Insert the image again.');
+  }
+
+  const img = await loadImageFromBase64(original);
+  return applyImage(shapeId, rowIndex, columnIndex, img, original, { ...opts, grow: false });
 }
 
 /**

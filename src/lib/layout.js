@@ -4,7 +4,20 @@
 // Everything here is in POINTS, which is what the PowerPoint JS API uses for
 // table row heights, column widths and cell margins.
 
-export const PLACEMENTS = ['left', 'right', 'above', 'below'];
+// Four bands, plus two arrangements that reserve nothing.
+//
+// The four bands times the three cross-axis alignments give the twelve
+// arrangements that matter -- "image in the top-left corner with text to its
+// right" is placement 'left' with align 'start', not a placement of its own.
+//
+// What is NOT here, because PowerPoint cannot represent it: text on two sides of
+// one image. A cell has a single text body and margins are rectangular, so
+// reserving two bands leaves text in the remaining corner rectangle rather than
+// wrapping round the image. It looks broken, so it is not offered.
+export const PLACEMENTS = ['left', 'right', 'above', 'below', 'centre', 'behind'];
+
+// Arrangements that do not push the text anywhere.
+const RESERVES_NOTHING = new Set(['centre', 'behind']);
 
 export const DEFAULTS = {
   placement: 'left',
@@ -44,6 +57,23 @@ export function layoutCell(o) {
   const ratio = imgW / imgH;
   const availW = Math.max(1, cellW - inset * 2);
   const availH = Math.max(1, cellH - inset * 2);
+
+  // 'behind' covers the whole cell and lets the overflow be cropped by the
+  // canvas -- the text then sits over the image. 'centre' fits the image inside
+  // the cell without moving the text, for cells that hold an image and nothing
+  // else.
+  if (RESERVES_NOTHING.has(placement)) {
+    const cover = placement === 'behind';
+    const k = cover
+      ? Math.max(cellW / imgW, cellH / imgH)
+      : Math.min(availW / imgW, availH / imgH);
+    const w0 = imgW * k;
+    const h0 = imgH * k;
+    return {
+      rect: { x: (cellW - w0) / 2, y: (cellH - h0) / 2, w: w0, h: h0 },
+      margins: { left: inset, right: inset, top: inset, bottom: inset }
+    };
+  }
 
   let w, h;
   if (isHorizontal(placement)) {
@@ -96,6 +126,7 @@ function crossAxis(align, extent, size, inset) {
  */
 export function growthFor(o) {
   const { placement, cellW, cellH, imgW, imgH } = o;
+  if (RESERVES_NOTHING.has(placement)) return { columnWidth: null, rowHeight: null };
   const gutter = o.gutter ?? DEFAULTS.gutter;
   const inset = o.inset ?? DEFAULTS.inset;
   const minTextPt = o.minTextPt ?? 48;

@@ -8,7 +8,11 @@ const PORTRAIT = { imgW: 900, imgH: 1600 };
 
 const ratio = (r) => r.w / r.h;
 
-test('aspect ratio survives every placement', () => {
+// 'behind' deliberately overflows the cell so the canvas crops it, and neither
+// it nor 'centre' reserves a band for text.
+const BANDED = PLACEMENTS.filter((p) => p !== 'centre' && p !== 'behind');
+
+test('aspect ratio survives every placement, banded or not', () => {
   for (const placement of PLACEMENTS) {
     for (const img of [LANDSCAPE, PORTRAIT]) {
       const { rect } = layoutCell({ ...CELL, ...img, placement });
@@ -20,8 +24,8 @@ test('aspect ratio survives every placement', () => {
   }
 });
 
-test('the image always stays inside the cell', () => {
-  for (const placement of PLACEMENTS) {
+test('a banded image always stays inside the cell', () => {
+  for (const placement of BANDED) {
     for (const img of [LANDSCAPE, PORTRAIT]) {
       for (const align of ['start', 'center', 'end']) {
         const { rect } = layoutCell({ ...CELL, ...img, placement, align, sizePct: 0.9 });
@@ -36,7 +40,7 @@ test('the image always stays inside the cell', () => {
 
 test('the reserved margin clears the image on the placed side', () => {
   const side = { left: 'left', right: 'right', above: 'top', below: 'bottom' };
-  for (const placement of PLACEMENTS) {
+  for (const placement of BANDED) {
     const { rect, margins } = layoutCell({ ...CELL, ...LANDSCAPE, placement, gutter: 8 });
     const band = (placement === 'left' || placement === 'right') ? rect.w : rect.h;
     assert.ok(
@@ -47,7 +51,7 @@ test('the reserved margin clears the image on the placed side', () => {
 });
 
 test('the reserved band leaves room for text', () => {
-  for (const placement of PLACEMENTS) {
+  for (const placement of BANDED) {
     const { margins } = layoutCell({ ...CELL, ...LANDSCAPE, placement, sizePct: 0.9 });
     assert.ok(CELL.cellW - margins.left - margins.right > 0, `${placement} left no width for text`);
     assert.ok(CELL.cellH - margins.top - margins.bottom > 0, `${placement} left no height for text`);
@@ -72,4 +76,27 @@ test('growth asks for more column width sideways and more row height vertically'
 test('bad input is rejected rather than producing NaN geometry', () => {
   assert.throws(() => layoutCell({ cellW: 0, cellH: 100, ...LANDSCAPE }), /usable size/);
   assert.throws(() => layoutCell({ ...CELL, imgW: 0, imgH: 10 }), /usable size/);
+});
+
+test("'image only' fits the whole image inside the cell and moves no text", () => {
+  const { rect, margins } = layoutCell({ ...CELL, ...LANDSCAPE, placement: 'centre' });
+  assert.ok(rect.w <= CELL.cellW && rect.h <= CELL.cellH, 'should contain, not crop');
+  assert.ok(Math.abs((rect.x + rect.w / 2) - CELL.cellW / 2) < 1e-9, 'should be centred');
+  assert.deepEqual(margins, { left: 4, right: 4, top: 4, bottom: 4 }, 'should reserve nothing');
+});
+
+test("'text over image' covers the cell completely, cropping the overflow", () => {
+  for (const img of [LANDSCAPE, PORTRAIT]) {
+    const { rect, margins } = layoutCell({ ...CELL, ...img, placement: 'behind' });
+    assert.ok(rect.w >= CELL.cellW - 1e-9 && rect.h >= CELL.cellH - 1e-9, 'should cover the cell');
+    assert.ok(Math.abs(ratio(rect) - img.imgW / img.imgH) < 1e-9, 'cover must not distort');
+    assert.deepEqual(margins, { left: 4, right: 4, top: 4, bottom: 4 }, 'should reserve nothing');
+  }
+});
+
+test('placements that reserve nothing never ask the cell to grow', () => {
+  for (const placement of ['centre', 'behind']) {
+    const g = growthFor({ placement, ...CELL, ...LANDSCAPE });
+    assert.deepEqual(g, { columnWidth: null, rowHeight: null });
+  }
 });

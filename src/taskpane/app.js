@@ -8,8 +8,13 @@ const state = {
   table: null,        // { shapeId, rowCount, columnCount, values, colWidths }
   cell: null,         // { rowIndex, columnIndex }
   filled: new Set(),  // "r,c" for cells we know already hold an image
-  busy: false
+  live: false,        // selected cell holds an image we can re-position in place
+  busy: false,
+  pending: null       // debounce handle for live re-positioning
 };
+
+// Placements that ignore the size, gap and alignment controls.
+const NO_BAND = new Set(['centre', 'behind']);
 
 Office.onReady((info) => {
   if (info.host !== Office.HostType.PowerPoint) {
@@ -30,6 +35,7 @@ Office.onReady((info) => {
 
   $('app').classList.remove('hidden');
   wireUp();
+  syncControlState();
   refreshTable();
 
   // The only selection signal add-ins get. There is no event for a table being
@@ -49,10 +55,19 @@ function wireUp() {
     const b = e.target.closest('button[data-v]');
     if (!b) return;
     [...$('placement').children].forEach((x) => x.classList.toggle('on', x === b));
+    syncControlState();
+    liveUpdate();
   };
 
-  $('size').oninput = () => ($('sizeOut').textContent = `${$('size').value}%`);
-  $('gutter').oninput = () => ($('gutterOut').textContent = `${$('gutter').value} pt`);
+  $('size').oninput = () => {
+    $('sizeOut').textContent = `${$('size').value}%`;
+    liveUpdate();
+  };
+  $('gutter').oninput = () => {
+    $('gutterOut').textContent = `${$('gutter').value} pt`;
+    liveUpdate();
+  };
+  for (const id of ['align', 'valign', 'halign']) $(id).onchange = liveUpdate;
 
   $('insert').onclick = () => $('file').click();
   $('file').onchange = onFileChosen;
@@ -69,9 +84,58 @@ function options() {
     gutter: Number($('gutter').value),
     align: $('align').value,
     textValign: $('valign').value,
+    textHalign: $('halign').value,
     grow: $('grow').checked,
     remember: $('remember').checked
   };
+}
+
+/** Put a cell's stored arrangement back into the controls. */
+function setOptions(o) {
+  if (!o) return;
+  if (o.placement) {
+    [...$('placement').children].forEach((b) => b.classList.toggle('on', b.dataset.v === o.placement));
+  }
+  if (typeof o.sizePct === 'number') {
+    $('size').value = String(Math.round(o.sizePct * 100));
+    $('sizeOut').textContent = `${$('size').value}%`;
+  }
+  if (typeof o.gutter === 'number') {
+    $('gutter').value = String(o.gutter);
+    $('gutterOut').textContent = `${$('gutter').value} pt`;
+  }
+  if (o.align) $('align').value = o.align;
+  if (o.textValign) $('valign').value = o.textValign;
+  if (o.textHalign) $('halign').value = o.textHalign;
+  syncControlState();
+}
+
+/** Grey out the controls a placement does not use. */
+function syncControlState() {
+  const placement = $('placement').querySelector('.on').dataset.v;
+  const unused = NO_BAND.has(placement);
+  for (const id of ['size', 'gutter', 'align']) {
+    $(id).disabled = unused;
+    $(id).closest('.field').style.opacity = unused ? 0.45 : 1;
+  }
+  $('grow').disabled = unused;
+}
+
+/**
+ * Re-position the image already in the selected cell. Debounced, because the
+ * sliders fire continuously and every apply is a full composite plus a sync.
+ */
+function liveUpdate() {
+  if (!state.live || !state.cell || !state.table) return;
+  clearTimeout(state.pending);
+  state.pending = setTimeout(() => {
+    const { rowIndex, columnIndex } = state.cell;
+    guard(async () => {
+      const o = options();
+      await ppt.reapply(state.table.shapeId, rowIndex, columnIndex, o);
+      say(`Moved the image in R${rowIndex + 1}C${columnIndex + 1} — ${o.placement}.`);
+    });
+  }, 300);
 }
 
 async function refreshTable({ quiet = false } = {}) {
@@ -126,15 +190,32 @@ function drawGrid() {
       b.title = text || `Row ${r + 1}, column ${c + 1}`;
       b.classList.toggle('on', state.cell?.rowIndex === r && state.cell?.columnIndex === c);
       b.classList.toggle('has', state.filled.has(`${r},${c}`));
-      b.onclick = () => {
-        state.cell = { rowIndex: r, columnIndex: c };
-        drawGrid();
-        say(`Cell R${r + 1}C${c + 1} selected.`);
-      };
+      b.onclick = () => selectCell(r, c);
       cells.push(b);
     }
   }
   grid.replaceChildren(...cells);
+}
+
+async function selectCell(rowIndex, columnIndex) {
+  state.cell = { rowIndex, columnIndex };
+  state.live = false;
+  drawGrid();
+  say(`Cell R${rowIndex + 1}C${columnIndex + 1} selected.`);
+
+  if (!state.filled.has(`${rowIndex},${columnIndex}`)) return;
+
+  try {
+    const stored = await ppt.readCellSettings(state.table.shapeId, rowIndex, columnIndex);
+    if (!stored) return;
+    setOptions(stored);
+    state.live = stored.hasOriginal;
+    say(stored.hasOriginal
+      ? `R${rowIndex + 1}C${columnIndex + 1} holds an image — change anything below and it moves.`
+      : `R${rowIndex + 1}C${columnIndex + 1} holds an image, but no original was stored, so it cannot be moved.`);
+  } catch (e) {
+    say(e.message, true);
+  }
 }
 
 function needCell() {
@@ -207,6 +288,7 @@ async function onRefit() {
 
 function afterApply(rowIndex, columnIndex, res, what) {
   state.filled.add(`${rowIndex},${columnIndex}`);
+  state.live = res.remembered;   // only re-positionable if we kept the original
   drawGrid();
   const kb = Math.round(res.bytes / 1024);
   const note = res.remembered ? '' : ' Too big to remember, so Re-fit will ask for it again.';
