@@ -1,0 +1,15 @@
+{
+  "name": "ppt-cell-images",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PowerPoint add-in: put images inside table cells, with text reserved to one side.",
+  "scripts": {
+    "start": "node server.cjs",
+    "certs": "office-addin-dev-certs install",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "devDependencies": {
+    "office-addin-dev-certs": "^1.13.0"
+  },
+  "type": "module"
+}
