@@ -42,7 +42,7 @@ apply. The house **writing** style still does.
   not shape tags — tag values are not sized for image payloads.
 - Originals are kept because **a cell's fill cannot be read back**
   (`ShapeFill` has no getter). Re-fit depends on them.
-- Changing the XML namespace orphans the stored originals in decks already
-  written. It currently reads `https://localhost:3000/...`, which is a dev
-  URL — if that is ever to change, change it before anyone relies on a saved
-  deck.
+- **Changing the XML namespace orphans the stored originals in every deck
+  already written.** It is `urn:cell-images:v1` — a URN, not a URL, because
+  it is only ever a lookup key. If it must change again, keep the old value
+  as a read-only fallback (as `LEGACY_NS` does) rather than a clean break.

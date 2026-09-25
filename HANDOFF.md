@@ -61,11 +61,11 @@ Then sideload `manifest.xml` — per-platform steps are in `README.md`.
 
 ## Things that will bite
 
-- **`store.js`'s XML namespace is `https://localhost:3000/cell-images/v1`** —
-  a dev URL baked into the persistence format. It is only an identifier, but
-  decks already written carry it, so changing it orphans their stored
-  originals. Pick a non-localhost namespace **before** anyone relies on a
-  saved deck, or accept it permanently.
+- **`store.js`'s XML namespace is `urn:cell-images:v1`** — the label the
+  hidden part is found by, never fetched. It was the dev server's address
+  until 2026-09-25; `LEGACY_NS` still reads that one so any deck written
+  before then keeps its stored originals. Changing the namespace again
+  orphans every deck that predates the change, so don't, casually.
 - **The manifest deliberately has no `<Requirements>` gate** on
   PowerPointApi 1.9 — the add-in checks at runtime and explains what is
   missing, instead of silently refusing to load. Don't "fix" this.
@@ -84,7 +84,8 @@ Then sideload `manifest.xml` — per-platform steps are in `README.md`.
 
 1. **Sideload it and actually use it.** Everything Office-facing is
    unverified. That is the single biggest gap.
-2. Decide the namespace question above while no saved deck depends on it.
+2. Drop `LEGACY_NS` once no deck written before 2026-09-25 matters —
+   realistically, once the add-in has been used in anger at all.
 
 Not related to `chalk`'s in-cell images (a canvas editor, its own model) or
 to `pptx_combiner`'s table-to-picture flattening — different problems that

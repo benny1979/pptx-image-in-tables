@@ -12,7 +12,16 @@
 // Cost, stated plainly: remembering originals roughly doubles the storage each
 // image takes in the .pptx. Turn it off in the pane if a deck gets fat.
 
-const NS = 'https://localhost:3000/cell-images/v1';
+// The label the hidden part is found by -- never fetched, never resolved, so
+// a URN rather than a URL: the old value below was the dev server's address,
+// which implied a host that has nothing to do with a saved deck.
+const NS = 'urn:cell-images:v1';
+
+// Read-only fallback, so decks written before the rename keep their stored
+// originals (and therefore Re-fit). New writes always use NS above; a deck
+// re-saved by this build quietly moves over. Safe to delete once no deck
+// predating 2026-09-25 matters.
+const LEGACY_NS = 'https://localhost:3000/cell-images/v1';
 const CAP_BYTES = 1.5 * 1024 * 1024;   // per image, before we give up and store params only
 
 export const key = (shapeId, rowIndex, columnIndex) => `${shapeId}!${rowIndex},${columnIndex}`;
@@ -59,10 +68,13 @@ export function fits(base64) {
 }
 
 async function findPart(context) {
-  const parts = context.presentation.customXmlParts.getByNamespace(NS);
-  parts.load('items/id');
+  const current = context.presentation.customXmlParts.getByNamespace(NS);
+  const legacy = context.presentation.customXmlParts.getByNamespace(LEGACY_NS);
+  current.load('items/id');
+  legacy.load('items/id');
   await context.sync();
-  return parts.items.length ? parts.items[0] : null;
+  if (current.items.length) return current.items[0];
+  return legacy.items.length ? legacy.items[0] : null;
 }
 
 function serialise(data) {
