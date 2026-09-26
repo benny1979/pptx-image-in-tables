@@ -14,12 +14,14 @@
 // ES modules are cached per resolved URL, so EVERY link in the graph needs
 // the stamp, not just the entry point - that is exactly what went wrong.
 
-const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// execFileSync, not execSync: no shell, nothing to interpolate into.
-const stamp = execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim();
+// A UTC timestamp, not the commit sha: the stamp has to be written BEFORE
+// committing, so a sha would always name the PREVIOUS commit and the build
+// id in the pane would never match the deploy it came from. Confusing
+// exactly when you are trying to tell stale from fresh.
+const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 const root = path.join(__dirname, '..', 'src');
 
 const files = [];

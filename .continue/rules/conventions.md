@@ -61,8 +61,8 @@ apply. The house **writing** style still does.
 
 - **`npm run bust` before every commit that changes `src/`.** Otherwise the
   task pane keeps running the previous build and you debug a fix that is
-  already deployed. Check the Diagnostics panel's `build:` against
-  `git rev-parse --short HEAD` before believing anything the pane does.
+  already deployed. Check the Diagnostics panel's `build:` stamp before
+  believing anything the pane does.
 
 ## Persistence
 

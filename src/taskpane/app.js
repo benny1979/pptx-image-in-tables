@@ -1,8 +1,8 @@
-import * as ppt from '../lib/ppt.js?v=558a912';
-import * as store from '../lib/store.js?v=558a912';
-import { loadImageFromFile, loadImageFromBase64, approxBase64Bytes } from '../lib/compose.js?v=558a912';
+import * as ppt from '../lib/ppt.js?v=202609261925';
+import * as store from '../lib/store.js?v=202609261925';
+import { loadImageFromFile, loadImageFromBase64, approxBase64Bytes } from '../lib/compose.js?v=202609261925';
 
-const BUILD = '558a912';
+const BUILD = '202609261925';
 const $ = (id) => document.getElementById(id);
 
 const state = {

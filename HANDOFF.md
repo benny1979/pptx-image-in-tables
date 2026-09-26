@@ -121,9 +121,10 @@ commit. **ES modules are cached per resolved URL, so the whole graph needs
 the stamp, not just the entry point** — missing that is what caused the
 above.
 
-The Diagnostics panel reports `build:` so the pane's actual version is
-visible. If it does not match `git rev-parse --short HEAD`, the pane is
-stale — do not debug anything else until it matches.
+The Diagnostics panel reports `build:` — a UTC `YYYYMMDDHHMM` stamp, not a
+commit sha, because the stamp is written before committing and a sha would
+always name the previous commit. **If `build:` is older than the last
+deploy, the pane is stale — do not debug anything else until it matches.**
 
 ## Things that will bite
 
