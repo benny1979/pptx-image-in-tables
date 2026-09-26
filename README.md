@@ -121,6 +121,20 @@ image:
 | Image only | Fits the whole image inside the cell, centred. Any text overlaps it. |
 | Text over image | Fills the cell edge to edge, cropping the overflow, with the text on top. |
 
+**Size**: either a percentage of the cell, or an exact measurement in
+centimetres on whichever axis you name — the other follows from the aspect
+ratio. A percentage of a cell whose size you did not choose is unpredictable;
+a measurement is not, and it survives the column later changing width. Typing
+a measurement takes over from the slider; clearing it hands back.
+
+Whichever you use, the image is capped by the cell. When that happens the
+pane says so and points at **Grow the cell to fit the image** — otherwise the
+control just looks dead.
+
+**Placement vs alignment**: placement picks the side the image sits on, and
+therefore which way the text is pushed. Alignment moves it along the *other*
+axis — up/down for a left or right image, across for an above or below one.
+
 Text alignment within whatever room is left is set separately — top / middle /
 bottom and left / centre / right / justified.
 

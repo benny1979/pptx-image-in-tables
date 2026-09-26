@@ -148,6 +148,18 @@ axis. The alignment options are now relabelled live — Top/Middle/Bottom for
 a left/right image, Left/Centre/Right for an above/below one. "Start/End"
 told nobody which way it would move.
 
+## Sizing: percentage or exact (2026-09-26)
+
+`layoutCell` takes `sizePt` + `sizeAxis` as well as `sizePct`; a positive
+`sizePt` wins. Both go through **one** clamp on **both** axes, so an exact
+size that overflows either way scales down with the ratio intact and reports
+`clamped`.
+
+`growthFor` always accepted `targetPt` and **the call site never passed it**,
+so "Grow the cell to fit the image" grew to the image's *natural* size rather
+than the size asked for. Now passed, converted through the aspect ratio onto
+whichever axis the placement bands along.
+
 ## Things that will bite
 
 - **`store.js`'s XML namespace is `urn:cell-images:v1`** — the label the

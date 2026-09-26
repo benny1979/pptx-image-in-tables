@@ -130,3 +130,59 @@ test('placements that ignore the size slider never report clamped', () => {
     assert.equal(out.clamped, false, placement);
   }
 });
+
+// --- an exact size in points, rather than a percentage of the cell ---
+
+test('an exact width is honoured and the ratio kept', () => {
+  const out = layoutCell({
+    cellW: 400, cellH: 400, imgW: 200, imgH: 100,
+    placement: 'left', sizePt: 120, sizeAxis: 'width', gutter: 6, inset: 4
+  });
+  assert.ok(Math.abs(out.rect.w - 120) < 0.01);
+  assert.ok(Math.abs(out.rect.h - 60) < 0.01);
+  assert.equal(out.clamped, false);
+});
+
+test('an exact height is honoured and the ratio kept', () => {
+  const out = layoutCell({
+    cellW: 400, cellH: 400, imgW: 200, imgH: 100,
+    placement: 'above', sizePt: 60, sizeAxis: 'height', gutter: 6, inset: 4
+  });
+  assert.ok(Math.abs(out.rect.h - 60) < 0.01);
+  assert.ok(Math.abs(out.rect.w - 120) < 0.01);
+});
+
+test('an exact size overrides the percentage, not the other way round', () => {
+  const pct = layoutCell({
+    cellW: 400, cellH: 400, imgW: 200, imgH: 100,
+    placement: 'left', sizePct: 0.9, gutter: 6, inset: 4
+  });
+  const exact = layoutCell({
+    cellW: 400, cellH: 400, imgW: 200, imgH: 100,
+    placement: 'left', sizePct: 0.9, sizePt: 50, sizeAxis: 'width',
+    gutter: 6, inset: 4
+  });
+  assert.ok(Math.abs(exact.rect.w - 50) < 0.01);
+  assert.ok(pct.rect.w > exact.rect.w);
+});
+
+test('an exact size too big for the cell is clamped, both axes considered', () => {
+  // Too wide AND too tall: the ratio must survive, and it must say it capped.
+  const out = layoutCell({
+    cellW: 100, cellH: 40, imgW: 200, imgH: 100,
+    placement: 'left', sizePt: 500, sizeAxis: 'width', gutter: 6, inset: 4
+  });
+  assert.equal(out.clamped, true);
+  assert.ok(out.rect.w <= 100 && out.rect.h <= 40);
+  assert.ok(Math.abs(out.rect.w / out.rect.h - 2) < 0.01, 'aspect ratio kept');
+});
+
+test('a zero or absent exact size falls back to the percentage', () => {
+  for (const sizePt of [0, undefined]) {
+    const out = layoutCell({
+      cellW: 400, cellH: 400, imgW: 200, imgH: 100,
+      placement: 'left', sizePct: 0.5, sizePt, gutter: 6, inset: 4
+    });
+    assert.ok(Math.abs(out.rect.w - (400 - 8) * 0.5) < 0.01, String(sizePt));
+  }
+});

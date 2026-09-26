@@ -1,8 +1,8 @@
-import * as ppt from '../lib/ppt.js?v=202609261935';
-import * as store from '../lib/store.js?v=202609261935';
-import { loadImageFromFile, loadImageFromBase64, approxBase64Bytes } from '../lib/compose.js?v=202609261935';
+import * as ppt from '../lib/ppt.js?v=202609261938';
+import * as store from '../lib/store.js?v=202609261938';
+import { loadImageFromFile, loadImageFromBase64, approxBase64Bytes } from '../lib/compose.js?v=202609261938';
 
-const BUILD = '202609261935';
+const BUILD = '202609261938';
 const $ = (id) => document.getElementById(id);
 
 const state = {
@@ -14,6 +14,9 @@ const state = {
   lastGeometry: null, // what the last apply actually produced, for Diagnostics
   pending: null       // debounce handle for live re-positioning
 };
+
+// 1cm in points. The API talks points everywhere; teachers do not.
+const PT_PER_CM = 72 / 2.54;
 
 // Placements that ignore the size, gap and alignment controls.
 const NO_BAND = new Set(['centre', 'behind']);
@@ -44,6 +47,7 @@ Office.onReady((info) => {
   $('app').classList.remove('hidden');
   wireUp();
   syncControlState();
+  syncSizeMode();
   refreshTable();
 
   // The only selection signal add-ins get. There is no event for a table being
@@ -70,8 +74,14 @@ function wireUp() {
 
   $('size').oninput = () => {
     $('sizeOut').textContent = `${$('size').value}%`;
+    // Touching the slider means you want the slider: drop any exact size,
+    // rather than silently ignoring the control you just moved.
+    $('sizeCm').value = '';
+    syncSizeMode();
     liveUpdate();
   };
+  $('sizeCm').oninput = () => { syncSizeMode(); liveUpdate(); };
+  $('sizeAxis').onchange = liveUpdate;
   $('gutter').oninput = () => {
     $('gutterOut').textContent = `${$('gutter').value} pt`;
     liveUpdate();
@@ -93,8 +103,13 @@ function wireUp() {
 
 function options() {
   const placement = $('placement').querySelector('.on').dataset.v;
+  const cm = Number($('sizeCm').value);
   return {
     placement,
+    // An empty or zero box means "use the slider" -- layoutCell only honours
+    // sizePt when it is positive.
+    sizePt: cm > 0 ? cm * PT_PER_CM : 0,
+    sizeAxis: $('sizeAxis').value,
     sizePct: Number($('size').value) / 100,
     gutter: Number($('gutter').value),
     align: $('align').value,
@@ -111,6 +126,13 @@ function setOptions(o) {
   if (o.placement) {
     [...$('placement').children].forEach((b) => b.classList.toggle('on', b.dataset.v === o.placement));
   }
+  if (o.sizePt > 0) {
+    $('sizeCm').value = String(Math.round((o.sizePt / PT_PER_CM) * 10) / 10);
+    if (o.sizeAxis) $('sizeAxis').value = o.sizeAxis;
+  } else {
+    $('sizeCm').value = '';
+  }
+  syncSizeMode();
   if (typeof o.sizePct === 'number') {
     $('size').value = String(Math.round(o.sizePct * 100));
     $('sizeOut').textContent = `${$('size').value}%`;
@@ -126,6 +148,19 @@ function setOptions(o) {
 }
 
 /** Grey out the controls a placement does not use. */
+/** Say which of the two size controls is actually in force. */
+function syncSizeMode() {
+  const cm = Number($('sizeCm').value);
+  const exact = cm > 0;
+  $('size').disabled = exact;
+  $('size').closest('.field').style.opacity = exact ? 0.45 : 1;
+  $('sizeMode').textContent = exact
+    ? `Using ${cm} cm ${$('sizeAxis').value === 'width' ? 'wide' : 'tall'}. `
+      + 'Clear the box to go back to the percentage slider.'
+    : 'Using the percentage slider. Type a measurement to use that instead; '
+      + 'clear it to go back.';
+}
+
 function syncControlState() {
   const placement = $('placement').querySelector('.on').dataset.v;
   const unused = NO_BAND.has(placement);
@@ -341,7 +376,8 @@ function afterApply(rowIndex, columnIndex, res, what) {
   const note = res.remembered ? '' : ' Too big to remember, so Re-fit will ask for it again.';
   // The cell, not the slider, decided the size -- so the slider looks dead.
   const clamp = res.clamped
-    ? ` The cell is too shallow for that size, so its height capped the image — tick "Grow the cell to fit the image".`
+    ? ' The cell was too small for that size, so it capped the image — tick '
+      + '"Grow the cell to fit the image".'
     : '';
   say(
     `Placed ${what} in R${rowIndex + 1}C${columnIndex + 1} ` +

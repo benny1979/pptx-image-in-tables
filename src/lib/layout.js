@@ -41,6 +41,8 @@ const isHorizontal = (placement) => placement === 'left' || placement === 'right
  * @param {number} o.cellH   cell height in points
  * @param {number} o.imgW    natural image width in pixels
  * @param {number} o.imgH    natural image height in pixels
+ * @param {number} [o.sizePt] exact size in points on `sizeAxis`; overrides sizePct
+ * @param {'width'|'height'} [o.sizeAxis] which axis `sizePt` measures
  * @returns {{rect: {x,y,w,h}, margins: {left,right,top,bottom}}}
  */
 export function layoutCell(o) {
@@ -76,16 +78,28 @@ export function layoutCell(o) {
     };
   }
 
-  let w, h, clamped = false;
-  if (isHorizontal(placement)) {
+  let w, h;
+  if (o.sizePt > 0) {
+    // An exact measurement, in points, on whichever axis was named. A
+    // percentage of a cell is unpredictable when the cell is a size you did
+    // not choose -- "3cm wide" is the thing a teacher can actually reason
+    // about, and it is stable when the column later changes width.
+    if ((o.sizeAxis ?? 'width') === 'width') { w = o.sizePt; h = w / ratio; }
+    else { h = o.sizePt; w = h * ratio; }
+  } else if (isHorizontal(placement)) {
     w = availW * sizePct;
     h = w / ratio;
-    if (h > availH) { h = availH; w = h * ratio; clamped = true; }   // never taller than the cell
   } else {
     h = availH * sizePct;
     w = h * ratio;
-    if (w > availW) { w = availW; h = w / ratio; clamped = true; }   // never wider than the cell
   }
+
+  // One clamp for both modes, on BOTH axes: an exact size can overflow either
+  // way, and the percentage modes could each only overflow one. Preserves the
+  // aspect ratio by scaling down whichever axis binds first.
+  let clamped = false;
+  const shrink = Math.min(availW / w, availH / h, 1);
+  if (shrink < 1) { w *= shrink; h *= shrink; clamped = true; }
   // `clamped` means the cell's other axis, not the size slider, decided how
   // big the image is -- so dragging the slider changes nothing visible. That
   // is indistinguishable from a broken control unless the UI says so.

@@ -1,9 +1,9 @@
 // Everything that touches Office.js lives here.
 
-import { readTable, cellRect, cellAt } from './geometry.js?v=202609261935';
-import { layoutCell, growthFor, DEFAULTS } from './layout.js?v=202609261935';
-import { compositeToCell, loadImageFromBase64, stripDataUrl } from './compose.js?v=202609261935';
-import * as store from './store.js?v=202609261935';
+import { readTable, cellRect, cellAt } from './geometry.js?v=202609261938';
+import { layoutCell, growthFor, DEFAULTS } from './layout.js?v=202609261938';
+import { compositeToCell, loadImageFromBase64, stripDataUrl } from './compose.js?v=202609261938';
+import * as store from './store.js?v=202609261938';
 
 /** What this build of PowerPoint can actually do. */
 export function requirements() {
@@ -98,11 +98,25 @@ export async function applyImage(shapeId, rowIndex, columnIndex, img, sourceBase
     // cell size the layout is computed against.
     if (o.grow) {
       const rect0 = cellRect(geom, rowIndex, columnIndex);
+      // targetPt was never passed, so Grow always grew the cell to the
+      // image's NATURAL size -- not the size actually asked for. With an
+      // exact size it must grow to exactly that. growthFor wants the figure
+      // on the axis the placement bands along: width for left/right, height
+      // for above/below, so an exact size on the other axis is converted
+      // through the aspect ratio here rather than silently misread.
+      const ratio = img.naturalWidth / img.naturalHeight;
+      let targetPt;
+      if (o.sizePt > 0) {
+        const wantW = (o.sizeAxis ?? 'width') === 'width' ? o.sizePt : o.sizePt * ratio;
+        targetPt = (o.placement === 'left' || o.placement === 'right')
+          ? wantW
+          : wantW / ratio;
+      }
       const g = growthFor({
         placement: o.placement,
         cellW: rect0.w, cellH: rect0.h,
         imgW: img.naturalWidth, imgH: img.naturalHeight,
-        gutter: o.gutter, inset: o.inset
+        gutter: o.gutter, inset: o.inset, targetPt
       });
       const table = shape.getTable();
       if (g.columnWidth) {
@@ -124,6 +138,7 @@ export async function applyImage(shapeId, rowIndex, columnIndex, img, sourceBase
       cellW: rect.w, cellH: rect.h,
       imgW: img.naturalWidth, imgH: img.naturalHeight,
       placement: o.placement, sizePct: o.sizePct,
+      sizePt: o.sizePt, sizeAxis: o.sizeAxis,
       gutter: o.gutter, inset: o.inset, align: o.align
     });
 
@@ -150,7 +165,9 @@ export async function applyImage(shapeId, rowIndex, columnIndex, img, sourceBase
         context,
         store.key(shapeId, rowIndex, columnIndex),
         {
-          placement: o.placement, sizePct: o.sizePct, gutter: o.gutter,
+          placement: o.placement, sizePct: o.sizePct,
+          sizePt: o.sizePt, sizeAxis: o.sizeAxis,
+          gutter: o.gutter,
           inset: o.inset, align: o.align,
           textValign: o.textValign, textHalign: o.textHalign
         },
