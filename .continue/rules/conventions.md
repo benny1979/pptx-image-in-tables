@@ -15,6 +15,10 @@ apply. The house **writing** style still does.
 - **Points, everywhere.** Row heights, column widths and cell margins are
   points in the PowerPoint JS API; the maths is in points end to end. Don't
   introduce pixels or EMUs without converting at the boundary and saying so.
+- **Two manifests, one `<Id>`.** `manifest.xml` points at GitHub Pages and is
+  what people install; `manifest.dev.xml` points at localhost and is what you
+  sideload while developing. Any change to one needs the same change to the
+  other — they differ only in the origin.
 - No build step and no bundler. Plain ES modules served as files. Keep it
   that way unless there is a real reason.
 - Tests are node's built-in runner (`node --test`), stdlib only, no

@@ -12,12 +12,12 @@
   <DisplayName DefaultValue="Cell Images"/>
   <Description DefaultValue="Place images inside PowerPoint table cells, with text reserved to the left, right, above or below."/>
 
-  <IconUrl DefaultValue="https://benny1979.github.io/pptx-image-in-tables/assets/icon-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://benny1979.github.io/pptx-image-in-tables/assets/icon-80.png"/>
-  <SupportUrl DefaultValue="https://benny1979.github.io/pptx-image-in-tables/"/>
+  <IconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-80.png"/>
+  <SupportUrl DefaultValue="https://localhost:3000/"/>
 
   <AppDomains>
-    <AppDomain>https://benny1979.github.io/pptx-image-in-tables</AppDomain>
+    <AppDomain>https://localhost:3000</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -30,7 +30,7 @@
        set in the task pane, which is far easier to diagnose. -->
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://benny1979.github.io/pptx-image-in-tables/src/taskpane/taskpane.html"/>
+    <SourceLocation DefaultValue="https://localhost:3000/src/taskpane/taskpane.html"/>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -79,13 +79,13 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.32" DefaultValue="https://benny1979.github.io/pptx-image-in-tables/assets/icon-32.png"/>
-        <bt:Image id="Icon.64" DefaultValue="https://benny1979.github.io/pptx-image-in-tables/assets/icon-64.png"/>
-        <bt:Image id="Icon.80" DefaultValue="https://benny1979.github.io/pptx-image-in-tables/assets/icon-80.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://localhost:3000/assets/icon-32.png"/>
+        <bt:Image id="Icon.64" DefaultValue="https://localhost:3000/assets/icon-64.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://localhost:3000/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Url.Taskpane" DefaultValue="https://benny1979.github.io/pptx-image-in-tables/src/taskpane/taskpane.html"/>
-        <bt:Url id="Url.Support" DefaultValue="https://benny1979.github.io/pptx-image-in-tables/"/>
+        <bt:Url id="Url.Taskpane" DefaultValue="https://localhost:3000/src/taskpane/taskpane.html"/>
+        <bt:Url id="Url.Support" DefaultValue="https://localhost:3000/"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Group.Label" DefaultValue="Cell Images"/>

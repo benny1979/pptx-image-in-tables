@@ -32,20 +32,25 @@ after it was written. Until then it existed **only on GitHub** — no local
 copy, no `NOTES.md`, no `TASKS.md` entry. A Drive-wide search for it found
 nothing, which is exactly why it went missing.
 
-## Running it
+## Two manifests
 
-```bash
-npm install
-npm run certs    # installs a local CA so Office trusts https://localhost:3000
-npm start        # leave running
-```
+| File | Points at | For |
+|---|---|---|
+| `manifest.xml` | `https://benny1979.github.io/pptx-image-in-tables` | Installing. Nothing to run. |
+| `manifest.dev.xml` | `https://localhost:3000` | Developing. Needs `npm start`. |
 
-Then sideload `manifest.xml` — per-platform steps are in `README.md`.
+**Same `<Id>` in both** — Office treats them as one add-in, so install one or
+the other, never both.
+
+Hosting is **GitHub Pages off `main`, repo root**. `.nojekyll` is there so
+Jekyll never touches the tree. Pushing to `main` redeploys; there is no build
+step. A Pages site is public, which is why the repo was made public on
+2026-09-26 — a free plan cannot serve Pages from a private repo at all.
 
 - Node **v26.7.0** / npm **11.19.0** on this machine (2026-09-25).
 - `npm install` has **not** been run in this clone; `node_modules/` is
-  gitignored, so the first run here will fetch `office-addin-dev-certs`.
-- `npm test` needs no install — it is stdlib only.
+  gitignored, so the first dev run will fetch `office-addin-dev-certs`.
+- `npm test` needs no install — stdlib only.
 
 ## Shape of the code
 

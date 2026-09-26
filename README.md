@@ -43,15 +43,12 @@ load.
 its output is an ordinary PowerPoint table. Old perpetual Office opens, presents
 and prints it fine.
 
-## Setting it up
+## Installing it
 
-```bash
-npm install
-npm run certs      # installs a local CA so Office will trust https://localhost:3000
-npm start          # leave this running
-```
-
-Then sideload `manifest.xml`:
+The add-in is hosted on GitHub Pages, so there is nothing to install and
+nothing to keep running — download
+[`manifest.xml`](https://raw.githubusercontent.com/benny1979/pptx-image-in-tables/main/manifest.xml)
+and sideload it:
 
 - **Windows desktop** — put `manifest.xml` in a folder, share that folder, then
   add the share path under File ▸ Options ▸ Trust Center ▸ Trust Center Settings
@@ -62,6 +59,25 @@ Then sideload `manifest.xml`:
 - **PowerPoint on the web** — Insert ▸ Add-ins ▸ Upload My Add-in.
 
 The add-in then sits on the Home tab as **Cell Images**.
+
+On a managed machine, Trusted Add-in Catalogs is often locked down by the
+Office administrator. PowerPoint on the web has no such gate.
+
+## Developing on it
+
+`manifest.dev.xml` is the same manifest pointed at `https://localhost:3000`.
+Sideload that one instead and serve the files yourself:
+
+```bash
+npm install
+npm run certs      # installs a local CA so Office will trust localhost
+npm start          # leave this running
+```
+
+Both manifests share an `<Id>`, so **install one or the other, never both** —
+Office treats them as the same add-in.
+
+`npm test` needs neither: it is stdlib-only and covers the placement maths.
 
 ## Using it
 
