@@ -1,6 +1,6 @@
 {
   "name": "ppt-cell-images",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "PowerPoint add-in: put images inside table cells, with text reserved to one side.",
   "scripts": {

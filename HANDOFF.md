@@ -64,6 +64,33 @@ step. A Pages site is public, which is why the repo was made public on
 | `src/taskpane/` | The pane: the cell grid, the arrangement controls. |
 | `server.cjs` | Minimal HTTPS static server for sideloading. Refuses to serve outside the project dir. |
 
+## Sideloading on Windows without admin
+
+The documented Windows route is a shared folder registered as a Trusted
+Add-in Catalog, which needs local admin. **It is not the only route.** Office
+reads a per-user registry key, which is what Microsoft's own
+`office-addin-dev-settings` uses:
+
+    HKCU\Software\Microsoft\Office.0\WEF\Developer
+      CellImages (REG_SZ) = <full path to manifest.xml>
+
+No share, no admin, no elevation. Restart PowerPoint fully afterwards.
+Registered on this machine 2026-09-26 pointing at
+`%LOCALAPPDATA%/CellImages/manifest.xml` (a copy — update it when the
+manifest changes).
+
+## Validate the manifest before blaming anything else
+
+    npx office-addin-manifest validate manifest.xml
+
+**Office ignores an invalid manifest silently** — no error, no entry, nothing
+in the ribbon. It looks exactly like a sideloading problem and is not.
+
+That is what happened on 2026-09-26: `<Version>0.1.0.0</Version>` failed
+*"Manifest Version Too Low: unsupported version number less than 1.0"*, so
+the add-in could never have appeared by any route. Version is now `1.0.0.0`
+and the manifest validates. **Run the validator first, every time.**
+
 ## Things that will bite
 
 - **`store.js`'s XML namespace is `urn:cell-images:v1`** — the label the

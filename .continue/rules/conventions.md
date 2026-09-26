@@ -15,6 +15,11 @@ apply. The house **writing** style still does.
 - **Points, everywhere.** Row heights, column widths and cell margins are
   points in the PowerPoint JS API; the maths is in points end to end. Don't
   introduce pixels or EMUs without converting at the boundary and saying so.
+- **Manifest `<Version>` must be >= 1.0.0.0.** Office silently ignores an
+  invalid manifest — no error, nothing in the ribbon, indistinguishable from
+  a sideloading problem. `0.1.0.0` cost an afternoon. Run
+  `npx office-addin-manifest validate manifest.xml` after any manifest edit,
+  before debugging anything else.
 - **Two manifests, one `<Id>`.** `manifest.xml` points at GitHub Pages and is
   what people install; `manifest.dev.xml` points at localhost and is what you
   sideload while developing. Any change to one needs the same change to the
