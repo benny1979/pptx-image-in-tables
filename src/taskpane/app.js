@@ -1,8 +1,8 @@
-import * as ppt from '../lib/ppt.js?v=202609261925';
-import * as store from '../lib/store.js?v=202609261925';
-import { loadImageFromFile, loadImageFromBase64, approxBase64Bytes } from '../lib/compose.js?v=202609261925';
+import * as ppt from '../lib/ppt.js?v=202609261935';
+import * as store from '../lib/store.js?v=202609261935';
+import { loadImageFromFile, loadImageFromBase64, approxBase64Bytes } from '../lib/compose.js?v=202609261935';
 
-const BUILD = '202609261925';
+const BUILD = '202609261935';
 const $ = (id) => document.getElementById(id);
 
 const state = {
@@ -11,6 +11,7 @@ const state = {
   filled: new Set(),  // "r,c" for cells we know already hold an image
   live: false,        // selected cell holds an image we can re-position in place
   busy: false,
+  lastGeometry: null, // what the last apply actually produced, for Diagnostics
   pending: null       // debounce handle for live re-positioning
 };
 
@@ -76,6 +77,9 @@ function wireUp() {
     liveUpdate();
   };
   for (const id of ['align', 'valign', 'halign']) $(id).onchange = liveUpdate;
+  // These two had NO handler at all, so ticking "Grow the cell to fit the
+  // image" after placing an image did nothing whatsoever.
+  for (const id of ['grow', 'remember']) $(id).onchange = liveUpdate;
 
   // No onclick for #insert -- it is a <label for="file">, so the browser
   // opens the picker itself. A scripted .click() is blocked in the Office
@@ -125,6 +129,15 @@ function setOptions(o) {
 function syncControlState() {
   const placement = $('placement').querySelector('.on').dataset.v;
   const unused = NO_BAND.has(placement);
+
+  // Placement picks the side the image sits on; alignment moves it along the
+  // OTHER axis. Naming that axis outright beats "Start / End", which told
+  // nobody which way it would move.
+  const vertical = placement === 'left' || placement === 'right';
+  $('alignLabel').textContent = vertical ? 'Image sits (up/down)' : 'Image sits (across)';
+  const words = vertical ? ['Top', 'Middle', 'Bottom'] : ['Left', 'Centre', 'Right'];
+  [...$('align').options].forEach((o, i) => { o.textContent = words[i]; });
+
   for (const id of ['size', 'gutter', 'align']) {
     $(id).disabled = unused;
     $(id).closest('.field').style.opacity = unused ? 0.45 : 1;
@@ -137,7 +150,15 @@ function syncControlState() {
  * sliders fire continuously and every apply is a full composite plus a sync.
  */
 function liveUpdate() {
-  if (!state.live || !state.cell || !state.table) return;
+  if (!state.table || !state.cell) return;
+  if (!state.live) {
+    // Silently doing nothing here is why the controls read as broken.
+    say(state.filled.has(`${state.cell.rowIndex},${state.cell.columnIndex}`)
+      ? 'That image was placed without "Remember the original", so it cannot be '
+        + 'moved. Insert it again with that ticked.'
+      : 'Nothing in this cell yet — place an image first, then these move it.');
+    return;
+  }
   clearTimeout(state.pending);
   state.pending = setTimeout(() => {
     const { rowIndex, columnIndex } = state.cell;
@@ -313,12 +334,19 @@ async function onRefit() {
 function afterApply(rowIndex, columnIndex, res, what) {
   state.filled.add(`${rowIndex},${columnIndex}`);
   state.live = res.remembered;   // only re-positionable if we kept the original
+  state.lastGeometry = res;
   drawGrid();
+  diagnose();
   const kb = Math.round(res.bytes / 1024);
   const note = res.remembered ? '' : ' Too big to remember, so Re-fit will ask for it again.';
+  // The cell, not the slider, decided the size -- so the slider looks dead.
+  const clamp = res.clamped
+    ? ` The cell is too shallow for that size, so its height capped the image — tick "Grow the cell to fit the image".`
+    : '';
   say(
     `Placed ${what} in R${rowIndex + 1}C${columnIndex + 1} ` +
-    `(${res.image.w.toFixed(0)} × ${res.image.h.toFixed(0)} pt, ${kb} KB fill).${note}`
+    `(${res.image.w.toFixed(0)} × ${res.image.h.toFixed(0)} pt in a ` +
+    `${res.cell.w.toFixed(0)} × ${res.cell.h.toFixed(0)} pt cell, ${kb} KB fill).${note}${clamp}`
   );
 }
 
@@ -355,6 +383,14 @@ async function diagnose() {
     `table: ${state.table ? `${state.table.name} ${state.table.rowCount}x${state.table.columnCount} id=${state.table.shapeId}` : 'none'}`,
     `cell: ${state.cell ? `R${state.cell.rowIndex + 1}C${state.cell.columnIndex + 1}` : 'none'}`,
     `filled: ${[...state.filled].join(' ') || 'none'}  live: ${state.live}`,
+    `last apply: ${state.lastGeometry
+      ? `cell ${state.lastGeometry.cell.w.toFixed(1)}x${state.lastGeometry.cell.h.toFixed(1)}pt `
+        + `img ${state.lastGeometry.image.w.toFixed(1)}x${state.lastGeometry.image.h.toFixed(1)} `
+        + `at ${state.lastGeometry.image.x.toFixed(1)},${state.lastGeometry.image.y.toFixed(1)} `
+        + `margins L${state.lastGeometry.margins.left.toFixed(1)} R${state.lastGeometry.margins.right.toFixed(1)} `
+        + `T${state.lastGeometry.margins.top.toFixed(1)} B${state.lastGeometry.margins.bottom.toFixed(1)} `
+        + `clamped=${state.lastGeometry.clamped}`
+      : 'none'}`,
     `last refresh error: ${lastRefreshError || 'none'}`
   ];
   try {

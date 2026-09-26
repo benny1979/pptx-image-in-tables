@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Cell Images</title>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-  <link rel="stylesheet" href="taskpane.css?v=202609261925"/>
+  <link rel="stylesheet" href="taskpane.css?v=202609261935"/>
 </head>
 <body>
   <div id="banner" class="banner hidden"></div>
@@ -47,11 +47,15 @@
       </label>
 
       <label class="field">
-        <span>Image alignment</span>
+        <span id="alignLabel">Image sits (up/down)</span>
+        <!-- Relabelled live by syncControlState(): this moves the image along
+             the axis the placement does NOT use, so "Start" means top for a
+             left/right image and left for an above/below one. "Start/End"
+             alone told nobody that. -->
         <select id="align">
-          <option value="start">Start</option>
-          <option value="center">Centre</option>
-          <option value="end">End</option>
+          <option value="start">Top</option>
+          <option value="center">Middle</option>
+          <option value="end">Bottom</option>
         </select>
       </label>
 
@@ -111,6 +115,6 @@
     </details>
   </main>
 
-  <script type="module" src="app.js?v=202609261925"></script>
+  <script type="module" src="app.js?v=202609261935"></script>
 </body>
 </html>

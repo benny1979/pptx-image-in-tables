@@ -100,3 +100,33 @@ test('placements that reserve nothing never ask the cell to grow', () => {
     assert.deepEqual(g, { columnWidth: null, rowHeight: null });
   }
 });
+
+// --- the size slider can be overruled by the cell, and must say so ---
+
+test('a cell too shallow for the requested size reports clamped', () => {
+  // A wide, short cell with a tall image: the height caps the size, so the
+  // slider changes nothing visible. Silence here reads as a dead control.
+  const out = layoutCell({
+    cellW: 300, cellH: 20, imgW: 400, imgH: 800,
+    placement: 'left', sizePct: 0.9, gutter: 6, inset: 4
+  });
+  assert.equal(out.clamped, true);
+});
+
+test('a cell with room to honour the requested size is not clamped', () => {
+  const out = layoutCell({
+    cellW: 300, cellH: 300, imgW: 400, imgH: 400,
+    placement: 'left', sizePct: 0.3, gutter: 6, inset: 4
+  });
+  assert.equal(out.clamped, false);
+});
+
+test('placements that ignore the size slider never report clamped', () => {
+  for (const placement of ['centre', 'behind']) {
+    const out = layoutCell({
+      cellW: 100, cellH: 10, imgW: 400, imgH: 800,
+      placement, sizePct: 0.9, gutter: 6, inset: 4
+    });
+    assert.equal(out.clamped, false, placement);
+  }
+});

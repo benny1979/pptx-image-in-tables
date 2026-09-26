@@ -71,20 +71,24 @@ export function layoutCell(o) {
     const h0 = imgH * k;
     return {
       rect: { x: (cellW - w0) / 2, y: (cellH - h0) / 2, w: w0, h: h0 },
-      margins: { left: inset, right: inset, top: inset, bottom: inset }
+      margins: { left: inset, right: inset, top: inset, bottom: inset },
+      clamped: false   // these placements ignore the size slider by design
     };
   }
 
-  let w, h;
+  let w, h, clamped = false;
   if (isHorizontal(placement)) {
     w = availW * sizePct;
     h = w / ratio;
-    if (h > availH) { h = availH; w = h * ratio; }   // clamp: never taller than the cell
+    if (h > availH) { h = availH; w = h * ratio; clamped = true; }   // never taller than the cell
   } else {
     h = availH * sizePct;
     w = h * ratio;
-    if (w > availW) { w = availW; h = w / ratio; }   // clamp: never wider than the cell
+    if (w > availW) { w = availW; h = w / ratio; clamped = true; }   // never wider than the cell
   }
+  // `clamped` means the cell's other axis, not the size slider, decided how
+  // big the image is -- so dragging the slider changes nothing visible. That
+  // is indistinguishable from a broken control unless the UI says so.
 
   // Position within the cell.
   let x, y;
@@ -104,7 +108,7 @@ export function layoutCell(o) {
   if (placement === 'above') margins.top = inset + h + gutter;
   if (placement === 'below') margins.bottom = inset + h + gutter;
 
-  return { rect: { x, y, w, h }, margins };
+  return { rect: { x, y, w, h }, margins, clamped };
 }
 
 function crossAxis(align, extent, size, inset) {

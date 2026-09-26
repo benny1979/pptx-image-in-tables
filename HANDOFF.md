@@ -126,6 +126,28 @@ commit sha, because the stamp is written before committing and a sha would
 always name the previous commit. **If `build:` is older than the last
 deploy, the pane is stale — do not debug anything else until it matches.**
 
+## Second run, 2026-09-26 — three dead controls
+
+1. **`grow` and `remember` had no change handler at all.** Ticking "Grow the
+   cell to fit the image" after placing one did nothing, ever.
+2. **`reapply()` hard-coded `grow: false`**, so even with a handler, growth
+   could only ever happen on the very first insert. Both fixed — growth is
+   grow-only and computed from the image, so re-applying at the same size is
+   a no-op.
+3. **The size slider is silently overruled** when the cell's other axis is
+   the binding constraint: `layoutCell` clamps, the image stops changing, and
+   the control reads as broken. It now returns `clamped`, and the pane says
+   so and points at Grow.
+
+`liveUpdate()` also used to `return` silently when the cell had no stored
+original. It now says which of the two reasons applies.
+
+**Placement vs alignment**: placement picks the side the image sits on and
+therefore which way the text is pushed; alignment moves it along the *other*
+axis. The alignment options are now relabelled live — Top/Middle/Bottom for
+a left/right image, Left/Centre/Right for an above/below one. "Start/End"
+told nobody which way it would move.
+
 ## Things that will bite
 
 - **`store.js`'s XML namespace is `urn:cell-images:v1`** — the label the

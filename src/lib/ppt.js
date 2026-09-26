@@ -1,9 +1,9 @@
 // Everything that touches Office.js lives here.
 
-import { readTable, cellRect, cellAt } from './geometry.js?v=202609261925';
-import { layoutCell, growthFor, DEFAULTS } from './layout.js?v=202609261925';
-import { compositeToCell, loadImageFromBase64, stripDataUrl } from './compose.js?v=202609261925';
-import * as store from './store.js?v=202609261925';
+import { readTable, cellRect, cellAt } from './geometry.js?v=202609261935';
+import { layoutCell, growthFor, DEFAULTS } from './layout.js?v=202609261935';
+import { compositeToCell, loadImageFromBase64, stripDataUrl } from './compose.js?v=202609261935';
+import * as store from './store.js?v=202609261935';
 
 /** What this build of PowerPoint can actually do. */
 export function requirements() {
@@ -120,7 +120,7 @@ export async function applyImage(shapeId, rowIndex, columnIndex, img, sourceBase
     }
 
     const rect = cellRect(geom, rowIndex, columnIndex);
-    const { rect: imgRect, margins } = layoutCell({
+    const { rect: imgRect, margins, clamped } = layoutCell({
       cellW: rect.w, cellH: rect.h,
       imgW: img.naturalWidth, imgH: img.naturalHeight,
       placement: o.placement, sizePct: o.sizePct,
@@ -158,7 +158,13 @@ export async function applyImage(shapeId, rowIndex, columnIndex, img, sourceBase
       );
     }
 
-    return { cell: rect, image: imgRect, bytes: Math.floor(composited.length * 0.75), remembered };
+    // `margins` and `clamped` go back to the pane so it can say what
+    // actually happened. "The cell height decided the size, not your
+    // slider" is otherwise invisible, and reads as a dead control.
+    return {
+      cell: rect, image: imgRect, margins, clamped,
+      bytes: Math.floor(composited.length * 0.75), remembered
+    };
   });
 }
 
@@ -262,7 +268,11 @@ export async function reapply(shapeId, rowIndex, columnIndex, opts) {
   }
 
   const img = await loadImageFromBase64(original);
-  return applyImage(shapeId, rowIndex, columnIndex, img, original, { ...opts, grow: false });
+  // grow is NOT forced off here. It used to be, which meant "Grow the cell to
+  // fit the image" could only ever work on the very first insert -- tick it
+  // afterwards and nothing happened, with no explanation. Growth is grow-only
+  // and computed from the image, so re-applying at the same size is a no-op.
+  return applyImage(shapeId, rowIndex, columnIndex, img, original, opts);
 }
 
 /**
