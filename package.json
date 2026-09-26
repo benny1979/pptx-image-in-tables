@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.cjs",
     "certs": "office-addin-dev-certs install",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "bust": "node tools/bust-cache.cjs"
   },
   "devDependencies": {
     "office-addin-dev-certs": "^1.13.0"

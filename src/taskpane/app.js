@@ -1,7 +1,8 @@
-import * as ppt from '../lib/ppt.js';
-import * as store from '../lib/store.js';
-import { loadImageFromFile, loadImageFromBase64, approxBase64Bytes } from '../lib/compose.js';
+import * as ppt from '../lib/ppt.js?v=558a912';
+import * as store from '../lib/store.js?v=558a912';
+import { loadImageFromFile, loadImageFromBase64, approxBase64Bytes } from '../lib/compose.js?v=558a912';
 
+const BUILD = '558a912';
 const $ = (id) => document.getElementById(id);
 
 const state = {
@@ -348,6 +349,7 @@ async function guard(fn) {
 async function diagnose() {
   const caps = ppt.requirements();
   const lines = [
+    `build: ${BUILD}`,
     `host: ${Office.context?.host} ${Office.context?.platform}`,
     `api 1.8/1.9/1.10: ${caps.fill}/${caps.tables}/${caps.renderShape}`,
     `table: ${state.table ? `${state.table.name} ${state.table.rowCount}x${state.table.columnCount} id=${state.table.shapeId}` : 'none'}`,

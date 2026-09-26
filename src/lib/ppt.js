@@ -1,9 +1,9 @@
 // Everything that touches Office.js lives here.
 
-import { readTable, cellRect, cellAt } from './geometry.js';
-import { layoutCell, growthFor, DEFAULTS } from './layout.js';
-import { compositeToCell, loadImageFromBase64, stripDataUrl } from './compose.js';
-import * as store from './store.js';
+import { readTable, cellRect, cellAt } from './geometry.js?v=558a912';
+import { layoutCell, growthFor, DEFAULTS } from './layout.js?v=558a912';
+import { compositeToCell, loadImageFromBase64, stripDataUrl } from './compose.js?v=558a912';
+import * as store from './store.js?v=558a912';
 
 /** What this build of PowerPoint can actually do. */
 export function requirements() {

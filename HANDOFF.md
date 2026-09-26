@@ -108,6 +108,23 @@ The reason all three took so long: **failures were invisible.** The quiet
 refresh swallowed its exception whole and nothing caught an uncaught throw.
 The Diagnostics panel added that day is what found bug 1 in one step.
 
+## Deploying — run `npm run bust` first
+
+Pages sends `Cache-Control: max-age=600` and the task pane's WebView caches
+on top of that, so **a pushed fix does not necessarily reach the pane**. On
+2026-09-26 the HTML refreshed while its imports did not: `app.js` was new,
+`ppt.js` was the previous one, and the bug looked unfixed for twenty
+minutes.
+
+`npm run bust` stamps every relative import and asset link with the current
+commit. **ES modules are cached per resolved URL, so the whole graph needs
+the stamp, not just the entry point** — missing that is what caused the
+above.
+
+The Diagnostics panel reports `build:` so the pane's actual version is
+visible. If it does not match `git rev-parse --short HEAD`, the pane is
+stale — do not debug anything else until it matches.
+
 ## Things that will bite
 
 - **`store.js`'s XML namespace is `urn:cell-images:v1`** — the label the

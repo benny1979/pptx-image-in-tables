@@ -59,6 +59,11 @@ apply. The house **writing** style still does.
   task pane's WebView. Use a real `<label for="...">`, and keep the input
   `visually-hidden` rather than `display:none`.
 
+- **`npm run bust` before every commit that changes `src/`.** Otherwise the
+  task pane keeps running the previous build and you debug a fix that is
+  already deployed. Check the Diagnostics panel's `build:` against
+  `git rev-parse --short HEAD` before believing anything the pane does.
+
 ## Persistence
 
 - Settings and originals live in a **presentation-level custom XML part**,
