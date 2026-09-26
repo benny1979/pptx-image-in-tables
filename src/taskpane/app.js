@@ -16,6 +16,12 @@ const state = {
 // Placements that ignore the size, gap and alignment controls.
 const NO_BAND = new Set(['centre', 'behind']);
 
+// Nothing in the pane reported an uncaught error, so a thrown handler
+// looked identical to a button that does nothing.
+window.addEventListener('error', (e) => say(`Unexpected error: ${e.message}`, true));
+window.addEventListener('unhandledrejection', (e) =>
+  say(`Unexpected error: ${e.reason?.message || e.reason}`, true));
+
 Office.onReady((info) => {
   if (info.host !== Office.HostType.PowerPoint) {
     return fail('This add-in only works in PowerPoint.');
@@ -50,6 +56,7 @@ Office.onReady((info) => {
 
 function wireUp() {
   $('refresh').onclick = () => refreshTable();
+  $('diagBox').ontoggle = () => { if ($('diagBox').open) diagnose(); };
 
   $('placement').onclick = (e) => {
     const b = e.target.closest('button[data-v]');
@@ -69,7 +76,10 @@ function wireUp() {
   };
   for (const id of ['align', 'valign', 'halign']) $(id).onchange = liveUpdate;
 
-  $('insert').onclick = () => $('file').click();
+  // No onclick for #insert -- it is a <label for="file">, so the browser
+  // opens the picker itself. A scripted .click() is blocked in the Office
+  // task pane once it is outside the original user gesture, which is
+  // exactly what made this button do nothing, silently.
   $('file').onchange = onFileChosen;
   $('adopt').onclick = () => guard(onAdopt);
   $('clear').onclick = () => guard(onClear);
@@ -147,6 +157,11 @@ async function refreshTable({ quiet = false } = {}) {
     });
 
     if (!found) {
+      // Quiet refreshes fire on every selection change, including clicking
+      // a picture. Wiping the grid there threw away the cell the user had
+      // just picked -- the exact thing they were about to fill. Keep what
+      // we have and say nothing; only an explicit Refresh clears.
+      if (quiet && state.table) return;
       state.table = null;
       state.cell = null;
       $('tableName').textContent = 'No table selected.';
@@ -170,10 +185,16 @@ async function refreshTable({ quiet = false } = {}) {
 
     $('tableName').textContent = `${found.name || 'Table'} — ${found.rowCount} × ${found.columnCount}`;
     drawGrid();
+    diagnose();
   } catch (e) {
-    if (!quiet) say(e.message, true);
+    // Even a quiet failure gets recorded -- it used to vanish entirely,
+    // which is why "it just does nothing" was all anyone could report.
+    lastRefreshError = e?.message || String(e);
+    if (!quiet) say(lastRefreshError, true);
   }
 }
+
+let lastRefreshError = null;
 
 function drawGrid() {
   const t = state.table;
@@ -250,7 +271,9 @@ async function onAdopt() {
     );
     state.cell = { rowIndex: hit.rowIndex, columnIndex: hit.columnIndex };
     drawGrid();
-    $('file').click();
+    // Cannot open the picker from here: this runs after an await, so the
+    // user gesture is gone and the click is ignored. Ask instead.
+    say(`${$('status').textContent} Now press "Insert an image…" and pick it.`);
     return;
   }
 
@@ -319,6 +342,38 @@ async function guard(fn) {
     state.busy = false;
     document.body.style.cursor = '';
   }
+}
+
+/** Facts, so "it does nothing" can be diagnosed without a debugger. */
+async function diagnose() {
+  const caps = ppt.requirements();
+  const lines = [
+    `host: ${Office.context?.host} ${Office.context?.platform}`,
+    `api 1.8/1.9/1.10: ${caps.fill}/${caps.tables}/${caps.renderShape}`,
+    `table: ${state.table ? `${state.table.name} ${state.table.rowCount}x${state.table.columnCount} id=${state.table.shapeId}` : 'none'}`,
+    `cell: ${state.cell ? `R${state.cell.rowIndex + 1}C${state.cell.columnIndex + 1}` : 'none'}`,
+    `filled: ${[...state.filled].join(' ') || 'none'}  live: ${state.live}`,
+    `last refresh error: ${lastRefreshError || 'none'}`
+  ];
+  try {
+    const sel = await PowerPoint.run(async (context) => {
+      const s = context.presentation.getSelectedShapes();
+      s.load('items/id,items/type,items/name');
+      const slide = context.presentation.getActiveSlideOrNullObject();
+      const shapes = slide.shapes;
+      shapes.load('items/id,items/type,items/name');
+      await context.sync();
+      return {
+        selected: s.items.map((i) => `${i.type}:${i.name}`),
+        onSlide: shapes.items.map((i) => `${i.type}:${i.name}`)
+      };
+    });
+    lines.push(`selected: ${sel.selected.join(', ') || 'nothing'}`);
+    lines.push(`on slide: ${sel.onSlide.join(', ') || 'nothing'}`);
+  } catch (e) {
+    lines.push(`selection read failed: ${e?.message || e}`);
+  }
+  $('diag').textContent = lines.join('\n');
 }
 
 function say(msg, isError = false) {
