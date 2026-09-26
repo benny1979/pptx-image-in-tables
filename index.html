@@ -1,0 +1,61 @@
+<!doctype html>
+<!--
+  The manifest's SupportUrl points here, so without this page "Support" is a
+  404. Deliberately one plain file: this is a landing page, not a site.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cell Images — a PowerPoint add-in</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 16px/1.6 -apple-system, "Segoe UI", system-ui, sans-serif;
+    max-width: 42rem; margin: 3rem auto; padding: 0 1.25rem;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: .25rem; }
+  .sub { opacity: .7; margin-top: 0; }
+  code { background: rgba(127,127,127,.18); padding: .1em .35em; border-radius: 3px; }
+  li { margin: .4rem 0; }
+  footer { margin-top: 3rem; font-size: .9rem; opacity: .7; }
+</style>
+</head>
+<body>
+
+<h1>Cell Images</h1>
+<p class="sub">A PowerPoint add-in that puts images <strong>inside table
+cells</strong>, with the cell's text reserved to one side — the thing Word
+tables do and PowerPoint's cannot.</p>
+
+<h2>Install</h2>
+<p>Nothing to run. Download
+<a href="https://raw.githubusercontent.com/benny1979/pptx-image-in-tables/main/manifest.xml">manifest.xml</a>
+and sideload it:</p>
+<ul>
+  <li><strong>PowerPoint on the web</strong> — Insert ▸ Add-ins ▸ Upload My
+      Add-in. Easiest, and not blocked on a managed machine.</li>
+  <li><strong>Windows</strong> — put the file in a shared folder, add that
+      share under File ▸ Options ▸ Trust Center ▸ Trust Center Settings ▸
+      Trusted Add-in Catalogs, restart PowerPoint.</li>
+  <li><strong>Mac</strong> — copy it to
+      <code>~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef/</code></li>
+</ul>
+<p>It then sits on the Home tab as <strong>Cell Images</strong>.</p>
+
+<h2>Requirements</h2>
+<p>Microsoft 365 PowerPoint with <strong>PowerPointApi 1.9</strong> — Windows
+build 2508+, Mac 16.100+, or PowerPoint on the web. Not available on
+volume-licensed perpetual or LTSC Office, and not on iPad. The add-in checks
+at runtime and says what is missing rather than failing silently.</p>
+
+<p>Decks you produce open correctly anywhere: the output is an ordinary
+PowerPoint table, so old perpetual Office presents and prints it fine.</p>
+
+<footer>
+  <a href="https://github.com/benny1979/pptx-image-in-tables">Source, full
+  documentation and known limits on GitHub</a>.
+</footer>
+
+</body>
+</html>

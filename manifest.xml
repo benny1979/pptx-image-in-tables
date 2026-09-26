@@ -17,7 +17,7 @@
   <SupportUrl DefaultValue="https://benny1979.github.io/pptx-image-in-tables/"/>
 
   <AppDomains>
-    <AppDomain>https://benny1979.github.io/pptx-image-in-tables</AppDomain>
+    <AppDomain>https://benny1979.github.io</AppDomain>
   </AppDomains>
 
   <Hosts>
