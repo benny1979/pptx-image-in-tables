@@ -71,7 +71,7 @@ Add-in Catalog, which needs local admin. **It is not the only route.** Office
 reads a per-user registry key, which is what Microsoft's own
 `office-addin-dev-settings` uses:
 
-    HKCU\Software\Microsoft\Office.0\WEF\Developer
+    HKCU/Software/Microsoft/Office/16.0/WEF/Developer   (forward slashes: see CLAUDE.md)
       CellImages (REG_SZ) = <full path to manifest.xml>
 
 No share, no admin, no elevation. Restart PowerPoint fully afterwards.
