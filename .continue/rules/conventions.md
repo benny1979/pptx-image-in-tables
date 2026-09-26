@@ -45,6 +45,20 @@ apply. The house **writing** style still does.
   add-in should load and explain what this build of PowerPoint is missing,
   rather than silently refusing to appear.
 
+## Office.js
+
+- **Check a method exists before building on it.** `ppt.js` called
+  `context.presentation.getActiveSlideOrNullObject()`, which is not in the
+  PowerPoint JS API at all. It threw on every fallback path, the throws were
+  swallowed, and the pane looked like it "did nothing". Use
+  `activeSlide(context)` — `getSelectedSlides().getItemAt(0)`.
+- **Never swallow an error in a background handler.** The selection-change
+  refresh discarded its exception, which is why a wrong method name survived
+  undetected. Record it; the Diagnostics panel shows it.
+- **A scripted `.click()` on a file input does not open a picker** in the
+  task pane's WebView. Use a real `<label for="...">`, and keep the input
+  `visually-hidden` rather than `display:none`.
+
 ## Persistence
 
 - Settings and originals live in a **presentation-level custom XML part**,

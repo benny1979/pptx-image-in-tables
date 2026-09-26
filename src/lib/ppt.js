@@ -18,6 +18,22 @@ export function requirements() {
   };
 }
 
+/**
+ * The slide being edited.
+ *
+ * NOT `context.presentation.getActiveSlideOrNullObject()` -- that method does
+ * not exist in the PowerPoint JS API. Calling it threw
+ * "is not a function" on every fallback path, and because those throws were
+ * swallowed, the pane simply appeared to do nothing. Diagnosed 2026-09-26
+ * from the add-in's own diagnostics panel.
+ *
+ * `getSelectedSlides()` (PowerPointApi 1.5) is the real one; the slide being
+ * edited is always the selected slide.
+ */
+export function activeSlide(context) {
+  return context.presentation.getSelectedSlides().getItemAt(0);
+}
+
 const isTable = (shape) => String(shape.type || '').toLowerCase() === 'table';
 const isPicture = (shape) => {
   const t = String(shape.type || '').toLowerCase();
@@ -40,13 +56,10 @@ export async function findTable(context) {
   const picked = selected.items.find(isTable);
   if (picked) return picked;
 
-  const slide = context.presentation.getActiveSlideOrNullObject();
-  slide.load('isNullObject');
-  const shapes = slide.shapes;
+  const shapes = activeSlide(context).shapes;
   shapes.load('items/id,items/type,items/name');
   await context.sync();
 
-  if (slide.isNullObject) return null;
   const tables = shapes.items.filter(isTable);
   if (tables.length === 1) return tables[0];
   if (tables.length > 1) throw new Error('More than one table on this slide -- click the one you want first.');
@@ -283,8 +296,7 @@ export async function refit(shapeId) {
 }
 
 async function shapeById(context, shapeId) {
-  const slide = context.presentation.getActiveSlideOrNullObject();
-  const shapes = slide.shapes;
+  const shapes = activeSlide(context).shapes;
   shapes.load('items/id,items/type,items/name,items/left,items/top,items/width,items/height');
   await context.sync();
   const shape = shapes.items.find((s) => s.id === shapeId);
@@ -293,8 +305,7 @@ async function shapeById(context, shapeId) {
 }
 
 async function findTableOnSlide(context) {
-  const slide = context.presentation.getActiveSlideOrNullObject();
-  const shapes = slide.shapes;
+  const shapes = activeSlide(context).shapes;
   shapes.load('items/id,items/type,items/name,items/left,items/top,items/width,items/height');
   await context.sync();
   const tables = shapes.items.filter(isTable);

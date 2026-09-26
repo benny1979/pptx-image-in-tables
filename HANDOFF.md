@@ -91,6 +91,23 @@ That is what happened on 2026-09-26: `<Version>0.1.0.0</Version>` failed
 the add-in could never have appeared by any route. Version is now `1.0.0.0`
 and the manifest validates. **Run the validator first, every time.**
 
+## First real run, 2026-09-26 — three bugs, none caught by any test
+
+All three were in the Office-facing half the tests cannot reach, and all
+three presented identically as "the button does nothing".
+
+1. **`getActiveSlideOrNullObject()` is not a real API.** Every fallback path
+   threw "is not a function". Replaced by `activeSlide()` using
+   `getSelectedSlides().getItemAt(0)`.
+2. **A scripted `.click()` on a file input is blocked** in the task pane's
+   WebView, so the picker never opened. Now a real `<label for="file">`.
+3. **The selection-change refresh wiped the chosen cell** when it resolved
+   to no table — which is exactly what clicking a picture did.
+
+The reason all three took so long: **failures were invisible.** The quiet
+refresh swallowed its exception whole and nothing caught an uncaught throw.
+The Diagnostics panel added that day is what found bug 1 in one step.
+
 ## Things that will bite
 
 - **`store.js`'s XML namespace is `urn:cell-images:v1`** — the label the

@@ -359,8 +359,7 @@ async function diagnose() {
     const sel = await PowerPoint.run(async (context) => {
       const s = context.presentation.getSelectedShapes();
       s.load('items/id,items/type,items/name');
-      const slide = context.presentation.getActiveSlideOrNullObject();
-      const shapes = slide.shapes;
+      const shapes = ppt.activeSlide(context).shapes;
       shapes.load('items/id,items/type,items/name');
       await context.sync();
       return {
